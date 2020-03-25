@@ -648,6 +648,7 @@ class User(BaseModel):
                     RepositoryTag,
                     PermissionPrototype,
                     DerivedStorageForImage,
+                    DerivedStorageForManifest,
                     TagManifest,
                     AccessToken,
                     OAuthAccessToken,
@@ -862,6 +863,7 @@ class Repository(BaseModel):
                 TagManifestLabel,
                 Label,
                 DerivedStorageForImage,
+                DerivedStorageForManifest,
                 RepositorySearchScore,
                 RepoMirrorConfig,
                 RepoMirrorRule,
@@ -1094,6 +1096,7 @@ class Image(BaseModel):
         return map(int, self.ancestors.split("/")[1:-1])
 
 
+@deprecated_model
 class DerivedStorageForImage(BaseModel):
     source_image = ForeignKeyField(Image)
     derivative = ForeignKeyField(ImageStorage)
@@ -1686,6 +1689,23 @@ class Manifest(BaseModel):
         )
 
 
+class DerivedStorageForManifest(BaseModel):
+    """
+    DerivedStorageForManifest represents storage derived from a manifest via some
+    sort of transformation, e.g. squashing.
+    """
+
+    source_manifest = ForeignKeyField(Manifest)
+    derivative = ForeignKeyField(ImageStorage)
+    transformation = ForeignKeyField(ImageStorageTransformation)
+    uniqueness_hash = CharField(null=True)
+
+    class Meta:
+        database = db
+        read_only_config = read_only_config
+        indexes = ((("source_manifest", "transformation", "uniqueness_hash"), True),)
+
+
 class TagKind(BaseModel):
     """
     TagKind describes the various kinds of tags that can be found in the registry.
@@ -1964,6 +1984,7 @@ LEGACY_INDEX_MAP = {
     "derivedstorageforimage_source_image_id_transformation_id_uniqueness_hash": "uniqueness_hash",
     "queueitem_processing_expires_available_after_queue_name_retries_remaining_available": "queueitem_pe_aafter_qname_rremaining_available",
     "queueitem_processing_expires_available_after_retries_remaining_available": "queueitem_pexpires_aafter_rremaining_available",
+    "fk_derivedstorageformanifest_transformation_id_imagestoragetransformation": "fk_derivedstorageformanifest_transformation_id_imagest_079575c1",
 }
 
 
